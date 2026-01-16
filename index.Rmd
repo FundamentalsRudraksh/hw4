@@ -1,0 +1,64 @@
+---
+title: "Hw-04"
+author: "Rudraksh Sharma"
+date: "2026-01-16"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(readr) # Load the package for future use
+library(dplyr) # Load the package for future use
+library(tidyr) # Load the package for future use
+```
+
+```{r}
+infant <- read_csv("infant_mortality_rate.csv") # Read/ Load the infant mortality csv
+life <- read_csv("life_expectancy_at_birth.csv") # Read/ Load the infant mortality csv
+maternal <- read_csv("maternal_mortality_ratio.csv") # Read/ Load the infant mortality csv
+```
+
+```{r}
+infant <- infant %>% rename(infant_mortality = variable) # Rename the variable column to something that makes more sense for merging
+life <- life %>% rename(life_expectancy = variable) # Rename the variable column to something that makes more sense for merging
+maternal <- maternal %>% rename(maternal_mortality = variable) # Rename the variable column to something that makes more sense for merging
+```
+
+```{r}
+merged_data <- infant %>% select(country, region, infant_mortality) %>% 
+  left_join(life %>% select(country, life_expectancy), by = "country") %>% 
+  left_join(maternal %>% select(country, maternal_mortality), by = "country") # Merge the data using infant file and using left join on the other two files using the country variable
+
+write_csv(merged_data, "merged.csv") # Create a new csv of the merged data frame
+# The next 3 rows checks the merging
+merging_check <- read_csv("merged.csv") # Read the new merged csv
+str(merging_check) # Check the names, type etc of the merged csv
+head(merging_check) # Shows the first few rows 
+```
+
+```{r}
+aggregate_region <- merged_data %>% group_by(region) %>% 
+  summarise(avg_infant_mortality = mean(infant_mortality, na.rm = TRUE),
+    avg_life_expectancy = mean(life_expectancy, na.rm = TRUE),
+    avg_maternal_mortality = mean(maternal_mortality, na.rm = TRUE)) # Group the merged data by region using mean as the aggregate function
+
+write_csv(aggregate_region, "aggregate_region.csv")# Create a new csv of the aggregated region data frame
+# The next 3 rows checks the merging
+checking_region <- read_csv("aggregate_region.csv") # Read the new csv
+str(checking_region) # Check the names, type etc of the new csv
+head(checking_region) # Shows the first few rows of the new data
+```
+
+```{r}
+long_data <- merged_data %>% pivot_longer(
+    cols = c(infant_mortality, life_expectancy, maternal_mortality),
+    names_to = "indicator variable", values_to = "value") # Changes the format of the merged data to from wide to long format by renaming the different variable columns to indicator variables
+write_csv(long_data, "long_format_merged_data.csv") # Create a new csv of the long format data frame
+# The next 3 rows checks the merging
+checking_long_merged_data <- read_csv("long_format_merged_data.csv") # Read the new csv
+str(checking_long_merged_data) # Check the names, type etc of the new csv
+head(checking_long_merged_data) # Shows the first few rows of the new data
+```
